@@ -290,7 +290,7 @@ def tela_inicial():
                 sys.exit()
             if event.type == pygame.VIDEORESIZE:
                 handle_resize(event.w, event.h)
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 return
 
 
@@ -389,6 +389,30 @@ def exibir_mesa(mesa, ganhadores):
 # Funcao Principal
 # ===========================
 def main():
+    def reconstruir_estado_etapa(mesa, etapa_destino):
+        """Reconstrói a mesa até a etapa desejada para permitir recuo de fase."""
+        mesa.reset()
+        if etapa_destino == 'inicio':
+            return []
+
+        mesa.distribuir_mao()
+        if etapa_destino == 'flop':
+            return []
+
+        mesa.revelar_flop()
+        if etapa_destino == 'turn':
+            return []
+
+        mesa.revelar_turn()
+        if etapa_destino == 'river':
+            return []
+
+        mesa.revelar_river()
+        if etapa_destino == 'fim':
+            return mesa.avaliar_maos()
+
+        return []
+
     tela_inicial()
     nomes = tela_nomes()
     positions = get_positions()
@@ -415,23 +439,35 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     rodando = False
-                elif etapa == 'inicio':
-                    mesa.reset()
-                    mesa.distribuir_mao()
-                    etapa = 'flop'
-                    ganhadores = []
-                elif etapa == 'flop':
-                    mesa.revelar_flop()
-                    etapa = 'turn'
-                elif etapa == 'turn':
-                    mesa.revelar_turn()
-                    etapa = 'river'
-                elif etapa == 'river':
-                    mesa.revelar_river()
-                    ganhadores = mesa.avaliar_maos()
-                    etapa = 'fim'
-                elif etapa == 'fim':
-                    etapa = 'inicio'
+                elif event.key == pygame.K_RETURN:
+                    if etapa == 'inicio':
+                        mesa.reset()
+                        mesa.distribuir_mao()
+                        etapa = 'flop'
+                        ganhadores = []
+                    elif etapa == 'flop':
+                        mesa.revelar_flop()
+                        etapa = 'turn'
+                    elif etapa == 'turn':
+                        mesa.revelar_turn()
+                        etapa = 'river'
+                    elif etapa == 'river':
+                        mesa.revelar_river()
+                        ganhadores = mesa.avaliar_maos()
+                        etapa = 'fim'
+                    elif etapa == 'fim':
+                        etapa = 'inicio'
+                elif event.key == pygame.K_BACKSPACE:
+                    # Volta uma etapa nas primeiras partes da rodada.
+                    etapa_anterior = {
+                        'flop': 'inicio',
+                        'turn': 'flop',
+                        'river': 'turn',
+                        'fim': 'river',
+                    }
+                    if etapa in etapa_anterior:
+                        etapa = etapa_anterior[etapa]
+                        ganhadores = reconstruir_estado_etapa(mesa, etapa)
 
         exibir_mesa(mesa, ganhadores)
 
